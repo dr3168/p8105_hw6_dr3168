@@ -1,0 +1,59 @@
+---
+title: "p8105_hw6_dr3168"
+author: "Daniela Rochez"
+date: "11/30/2021"
+output: github_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+```
+
+```{r}
+child_birthweight_df=read_csv("data/birthweight.csv")
+
+child_birthweight_df=
+  child_birthweight_df %>% 
+  janitor::clean_names() %>% 
+  mutate(babysex=
+           recode(
+             babysex,"1"= "male", "2"="female")) %>%
+  mutate(frace=recode(frace, 
+                      "1"= "white", "2"="black",
+                      "3"="asian","4"="puerto_rican",
+                      "8"="other", "9"="unknown"))%>%
+  mutate(malform=
+           recode(malform,"1"= "present",
+                  "0"="absent")) %>% 
+  mutate(mrace=recode(mrace, 
+                      "1"= "white", "2"="black",
+                      "3"="asian","4"="puerto_rican",
+                      "8"="other")) %>% 
+  mutate(babysex=as.factor(babysex),
+         frace=as.factor(frace),
+         mrace=as.factor(mrace),
+         malform= as.factor(malform),
+         momage=as.factor(momage))
+
+```
+Creating Linear Model
+```{r}
+
+child_birthweight_df %>% 
+  ggplot(aes(x = ppbmi, y = bwt)) + geom_point()
+
+
+lm_bwt_ppbmi = lm(bwt ~ ppbmi+babysex, data = child_birthweight_df)
+
+child_birthweight_df %>% 
+  add_residuals(lm_bwt_ppbmi) %>%
+  add_predictions(lm_bwt_ppbmi) %>% 
+  ggplot(aes(x = pred, y = resid)) + geom_point()
+  
+
+```
+
