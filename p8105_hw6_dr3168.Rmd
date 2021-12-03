@@ -159,6 +159,8 @@ bootstrap_results %>%
   summarize(
     ci_lower = quantile(log_b0_b1, 0.025), 
     ci_upper = quantile(log_b0_b1, 0.975))
+
+#Values from intercept and names from terms when you pivot wider and rename the intercept and x
 ```
 CI for R Squared
 ```{r}
