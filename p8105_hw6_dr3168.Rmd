@@ -14,7 +14,8 @@ library(modelr)
 ```
 
 ```{r}
-child_birthweight_df=read_csv("data/birthweight.csv")
+child_birthweight_df=
+  read_csv("data/birthweight.csv")
 
 child_birthweight_df=
   child_birthweight_df %>% 
@@ -49,8 +50,8 @@ child_birthweight_df %>%
   add_residuals(lm_bwt_ppbmi) %>%
   add_predictions(lm_bwt_ppbmi) %>% 
   ggplot(aes(x = pred, y = resid))+ geom_point()
-
 ```
+I was really interested in seeing if there is an association between baby birth weight and the bmi of the mother pre-pregnancy. I also wanted to see if baby sex had an affect on birth weight.
 
 Cross Validation
 ```{r}
@@ -59,10 +60,7 @@ cv_bwt_df=
     mutate(
     train = map(train, as_tibble),
     test = map(test, as_tibble))
-```
 
-
-```{r}
 cv_bwt_df=
   cv_bwt_df %>% 
    mutate(
@@ -86,7 +84,7 @@ cv_bwt_df=
         map2_dbl(lm_bwt_head_length_sex, test, 
                  ~rmse(model= .x, data = .y)))
 ```
-
+Plotting Prediction error
 ```{r}
 cv_bwt_df%>% 
   select(starts_with("rmse")) %>% 
@@ -99,7 +97,7 @@ cv_bwt_df%>%
   ggplot(aes(x = model, y = rmse)) + geom_violin()
 ```
 
-
+The interaction between head circumference,length, and sex has the best predictions compared to the main effect of gestational age and birth length and the main effect of baby sex and pre-pregnancy bmi.
 
 Problem 2
 ```{r}
@@ -152,16 +150,24 @@ bootstrap_results =
 
 CI for Log B0 and B1
 ```{r}
-bootstrap_results %>% 
-  group_by(strap_number) %>%
-  summarize(log_b0_b1 = prod(estimate)) %>% 
-  mutate(log_b0_b1= log(log_b0_b1)) %>% 
-  summarize(
-    ci_lower = quantile(log_b0_b1, 0.025), 
-    ci_upper = quantile(log_b0_b1, 0.975))
+bootstrap_results_nontidy=
+  bootstrap_results %>% 
+  select(strap_number, term, estimate) %>% 
+  pivot_wider(
+  names_from = "term", 
+  values_from = "estimate") %>% 
+  rename(b0= "(Intercept)",
+         b1= tmin) %>%
+  group_by(strap_number) %>% 
+  summarize(logb0b1= log(b0*b1))
 
-#Values from intercept and names from terms when you pivot wider and rename the intercept and x
+bootstrap_results_nontidy %>% 
+  summarize(
+    ci_lower = quantile(logb0b1, 0.025, na.rm=T), 
+    ci_upper = quantile(logb0b1, 0.975, na.rm=T))
+
 ```
+
 CI for R Squared
 ```{r}
 bootstrap_results %>% 
@@ -171,15 +177,14 @@ bootstrap_results %>%
 ```
 Creating distribution of log estimates
 ```{r}
-bootstrap_results %>% 
-  group_by(strap_number) %>%
-  summarize(log_b0_b1 = prod(estimate)) %>% 
-  mutate(log_b0_b1= log(log_b0_b1)) %>% 
- ggplot(aes(x = log_b0_b1)) + geom_density()
+bootstrap_results_nontidy %>% 
+ ggplot(aes(x = logb0b1)) + geom_density()
 ```
+This follows a normal distribution and it seems like the most estimates are between 2.00 and 2.025.
+
 Creating distribution of r squared estimates
 ```{r}
 bootstrap_results %>% 
  ggplot(aes(x = r.squared)) + geom_density()
 ```
-
+This follows a normal distribution and it seems like the most estimates are between 0.91 and 0.92.
